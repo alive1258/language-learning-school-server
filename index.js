@@ -25,18 +25,43 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const informationCollection = client.db("languageSchoolDB").collection("informations");
+    const informationCollection = client
+      .db("languageSchoolDB")
+      .collection("informations");
     const cartCollection = client.db("languageSchoolDB").collection("carts");
     const usersCollection = client.db("languageSchoolDB").collection("users");
 
-    // users related api 
+    // users related api
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
     app.post("/users", async (req, res) => {
       const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await usersCollection.findOne(query);
+
+      if (existingUser) {
+        return res.send({ message: "user already exists" });
+      }
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
 
-    // informations related api 
+    app.patch("users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // informations related api
     app.get("/informations", async (req, res) => {
       const result = await informationCollection.find().toArray();
       res.send(result);
@@ -86,10 +111,10 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Language Learning School is coming on port ${port}`);
 });
- // const email = 'coderliton@gmail.com';
-      // const courseItemId = req.body.courseItemId;
+// const email = 'coderliton@gmail.com';
+// const courseItemId = req.body.courseItemId;
 
-      // const query ={email:email,courseItemId:courseItemId};
-      // const scan = await cartCollection.find(query).toArray()
+// const query ={email:email,courseItemId:courseItemId};
+// const scan = await cartCollection.find(query).toArray()
 
-      // console.log('scan: '+scan.length)
+// console.log('scan: '+scan.length)
