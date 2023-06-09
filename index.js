@@ -25,11 +25,18 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const informationCollection = client
-      .db("languageSchoolDB")
-      .collection("informations");
+    const informationCollection = client.db("languageSchoolDB").collection("informations");
     const cartCollection = client.db("languageSchoolDB").collection("carts");
+    const usersCollection = client.db("languageSchoolDB").collection("users");
 
+    // users related api 
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // informations related api 
     app.get("/informations", async (req, res) => {
       const result = await informationCollection.find().toArray();
       res.send(result);
@@ -48,14 +55,6 @@ async function run() {
     });
 
     app.post("/carts", async (req, res) => {
-      // const email = 'coderliton@gmail.com';
-      // const courseItemId = req.body.courseItemId;
-
-      // const query ={email:email,courseItemId:courseItemId};
-      // const scan = await cartCollection.find(query).toArray()
-
-      // console.log('scan: '+scan.length)
-
       const item = req.body;
       const result = await cartCollection.insertOne(item);
       res.send(result);
@@ -87,3 +86,10 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Language Learning School is coming on port ${port}`);
 });
+ // const email = 'coderliton@gmail.com';
+      // const courseItemId = req.body.courseItemId;
+
+      // const query ={email:email,courseItemId:courseItemId};
+      // const scan = await cartCollection.find(query).toArray()
+
+      // console.log('scan: '+scan.length)
