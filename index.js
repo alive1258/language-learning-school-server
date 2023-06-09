@@ -1,12 +1,40 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
-// middleware
+
+
 app.use(cors());
 app.use(express.json());
+
+
+// verify Jwt
+const verifyJWT=(req,res,next)=>{
+  const authorization=req.headers.authorization;
+  if(!authorization){
+    return res
+    .status(401)
+    .send({error:true, message:'unauthorized access'})
+  }
+// token bearer
+const token =authorization.split(" ")[1]
+
+jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+if(err){
+  return res
+.status(401)
+.send({error:true, message:'unauthorized access'})
+
+}
+req.decoded=decoded;
+next()
+})
+
+
+}
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.1yov7jc.mongodb.net/?retryWrites=true&w=majority`;
@@ -31,6 +59,16 @@ async function run() {
     const cartCollection = client.db("languageSchoolDB").collection("carts");
     const usersCollection = client.db("languageSchoolDB").collection("users");
 
+    // jwt 
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
+
+
     // users related api
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -47,13 +85,27 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+    // admin 
 
-    app.patch("users/admin/:id", async (req, res) => {
+    app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
           role: "admin",
+        },
+      };
+
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    // instructor 
+    app.patch("/users/instructor/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "instructor",
         },
       };
 
