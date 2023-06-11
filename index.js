@@ -52,6 +52,7 @@ async function run() {
       .collection("informations");
     const cartCollection = client.db("languageSchoolDB").collection("carts");
     const usersCollection = client.db("languageSchoolDB").collection("users");
+    const classCollection = client.db("languageSchoolDB").collection("classes");
 
     // jwt
     app.post("/jwt", (req, res) => {
@@ -152,12 +153,40 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+    // classes related api 
+    app.get("/classes", async (req, res) => {
+      const result = await classCollection.find().toArray();
+      res.send(result);
+    });
+    app.post('/classes',verifyJWT,verifyInstructor, async(req,res)=>{
+      const courseItem=req.body;
+      const result= await classCollection.insertOne(courseItem)
+      res.send(result)
+    })
+    // update 
+    app.patch("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const UpdateCourseData = req.body;
+      const toyData = {
+        $set: {
+          image: UpdateCourseData.image,
+          price: UpdateCourseData.price,
+          available_seats: UpdateCourseData.available_seats,
+          course_name: UpdateCourseData.course_name,
+        },
+      };
+      const result = await classCollection.updateOne(filter, toyData, options);
+      res.send(result);
+    });
 
     // informations related api
     app.get("/informations", async (req, res) => {
       const result = await informationCollection.find().toArray();
       res.send(result);
     });
+  
 
     // class cart collection api
     app.get("/carts", verifyJWT, async (req, res) => {
